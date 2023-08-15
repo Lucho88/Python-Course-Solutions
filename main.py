@@ -1,8 +1,7 @@
 # import task_101_initial
 # import task_101_solution
-import task_110_initial
-import asyncio
-
+# import task_110_initial
+import websocket
 
 import task_115_solution
 
@@ -13,12 +12,12 @@ import task_115_solution
 # task_115_solution.run()
 
 
-if __name__ == '__main__':
-    finnhub_api_token = 'cjd12r9r01qnak8idrogcjd12r9r01qnak8idrp0'
-    btc_price_tracker = task_115_solution.RealTimeBitcoinPrice(finnhub_token=finnhub_api_token)
-
-    try:
-        asyncio.get_event_loop().run_until_complete(btc_price_tracker.connect())
-    except KeyboardInterrupt:
-        print("Script manually terminated.")
+if __name__ == "__main__":
+    websocket.enableTrace(True)
+    ws = websocket.WebSocketApp("wss://ws.finnhub.io?token=cjd12r9r01qnak8idrogcjd12r9r01qnak8idrp0",
+                                on_message =task_115_solution.on_message,
+                                on_error =task_115_solution.on_error,
+                                on_close =task_115_solution.on_close)
+    ws.on_open = task_115_solution.on_open
+    ws.run_forever()
 
