@@ -11,13 +11,12 @@ def generate_permutations(a, n):
     else:
         for i in range(n + 1):
             j = random.randint(0, n)
-            print(j, '-j')
-            print(n, '-n')
-            a[j], a[n] = a[n], a[j]
+            k = random.randint(0, n)
+            a[j], a[k] = a[k], a[j]
             print(''.join(a))
             generate_permutations(a, n - 1)
             printed_permutations += 1
-            if printed_permutations >= 50:
+            if printed_permutations >= 20:
                 sys.exit(0)
         generate_permutations(a, n-1)
 
