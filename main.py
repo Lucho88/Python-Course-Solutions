@@ -2,8 +2,7 @@
 # import task_101_solution
 # import task_110_initial
 import websocket
-
-import task_115_solution
+from task_115_solution import DataProcess
 
 
 # task_101_initial.run()
@@ -13,11 +12,12 @@ import task_115_solution
 
 
 if __name__ == "__main__":
-    websocket.enableTrace(True)
+    data_process = DataProcess()
+    # websocket.enableTrace(True)
     ws = websocket.WebSocketApp("wss://ws.finnhub.io?token=cjd12r9r01qnak8idrogcjd12r9r01qnak8idrp0",
-                                on_message =task_115_solution.on_message,
-                                on_error =task_115_solution.on_error,
-                                on_close =task_115_solution.on_close)
-    ws.on_open = task_115_solution.on_open
+                                on_message=data_process.on_message,
+                                on_error=data_process.on_error,
+                                on_close=data_process.on_close)
+    ws.on_open = data_process.on_open
     ws.run_forever()
 
