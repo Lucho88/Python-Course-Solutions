@@ -1,12 +1,14 @@
 import json
 import datetime
 import time
+import threading
 
 
 class DataProcess:
     def __init__(self):
         self.raw_data = []  # Store raw data here
         self.last_average_time = None
+        self.lock = threading.Lock()
 
     def process_live_data(self, json_data):
         try:
@@ -25,48 +27,50 @@ class DataProcess:
                         # print(formatted_line)
                     else:
                         print("Invalid data entry:", entry)
-            else:
-                print("Invalid JSON data format.")
         except (json.JSONDecodeError, KeyError) as e:
             print("Error processing JSON data:", e)
 
-    def calculate_averages(self, current_time):
-        if len(self.raw_data) > 0:
-            minute_data = {}
-
-            for entry in self.raw_data:
-                timestamp = datetime.datetime.fromtimestamp(entry['timestamp'])
-                minute_key = timestamp.strftime('%Y-%m-%d %H:%M')
-                if minute_key not in minute_data:
-                    minute_data[minute_key] = {'total_price_volume': 0, 'total_volume': 0}
-                minute_data[minute_key]['total_price_volume'] += entry['price'] * entry['volume']
-                minute_data[minute_key]['total_volume'] += entry['volume']
-
-            self.raw_data = []  # Reset raw data after accumulating data
-
-            # Calculate and print VWAP for each unique interval
-            for minute_key, data in minute_data.items():
-                if data['total_volume'] != 0:
-                    vwap = data['total_price_volume'] / data['total_volume']
-                    start_time = datetime.datetime.strptime(minute_key, '%Y-%m-%d %H:%M')
-                    end_time = start_time + datetime.timedelta(minutes=1)
-                    formatted_interval = f"{start_time.strftime('%Y-%m-%d %H:%M')}-{end_time.strftime('%H:%M')}"
-
-                    # Calculate the time to sleep based on the last printed interval
+    def calculate_averages(self):
+        while True:
+            with self.lock:
+                if len(self.raw_data) > 0:
                     if self.last_average_time is None:
+                        self.last_average_time = datetime.datetime.now()
                         sleep_time = 2 * 60  # Sleep 2 minutes for the first interval
                     else:
-                        sleep_time = 60
+                        start_time = self.last_average_time
+                        end_time = datetime.datetime.now()
+                        minute_data = {}
+
+                        for entry in self.raw_data:
+                            timestamp = datetime.datetime.fromtimestamp(entry['timestamp'])
+                            if start_time <= timestamp <= end_time:
+                                minute_key = timestamp.strftime('%Y-%m-%d %H:%M')
+                                if minute_key not in minute_data:
+                                    minute_data[minute_key] = {'total_price_volume': 0, 'total_volume': 0}
+                                minute_data[minute_key]['total_price_volume'] += entry['price'] * entry['volume']
+                                minute_data[minute_key]['total_volume'] += entry['volume']
+
+                        self.raw_data = []  # Reset raw data after accumulating data
+
+                        # Calculate and print VWAP for each unique interval
+                        for minute_key, data in minute_data.items():
+                            if data['total_volume'] != 0:
+                                vwap = data['total_price_volume'] / data['total_volume']
+                                start_time = datetime.datetime.strptime(minute_key, '%Y-%m-%d %H:%M')
+                                end_time = start_time + datetime.timedelta(minutes=1)
+                                formatted_interval = f"{start_time.strftime('%Y-%m-%d %H:%M')}-{end_time.strftime('%H:%M')}"
+
+                                sleep_time = 60  # Sleep 1 minute for subsequent intervals
+                                time.sleep(sleep_time)
+                                self.last_average_time = end_time  # Update the last average time
+
+                                print(f"Interval: {formatted_interval} - Volume-Weighted Average Price: {vwap:.2f}")
 
                     time.sleep(sleep_time)
-                    self.last_average_time = end_time  # Update the last average time
-
-                    print(f"Interval: {formatted_interval} - Volume-Weighted Average Price: {vwap:.2f}")
 
     def on_message(self, ws, message):
         self.process_live_data(message)
-        current_time = datetime.datetime.now() - datetime.timedelta(hours=3)  # Adjusted time
-        self.calculate_averages(current_time)
 
     def on_error(self, ws, error):
         print(error)
