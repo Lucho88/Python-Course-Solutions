@@ -1,18 +1,16 @@
-# import task_101_initial
-# import task_101_solution
-# import task_110_initial
+import task_101
+# import task_110
+
+from task_115 import DataProcess
 import threading
-
 import websocket
-from task_115_solution import DataProcess
 
+task_101.run()
+# task_101.run()
+# task_110.run()
 
-# task_101_initial.run()
-# task_101_solution.run()
-# task_110_initial.run()
-# task_115_solution.run()
-
-
+"""
+# task_115
 if __name__ == "__main__":
     data_process = DataProcess()
 
@@ -28,6 +26,8 @@ if __name__ == "__main__":
     # Start calculating averages on a separate thread
     calculate_thread = threading.Thread(target=data_process.calculate_averages)
     calculate_thread.start()
+                            """
+
 
 
 
